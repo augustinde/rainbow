@@ -11,6 +11,11 @@ pass_len = 6
 hash_len = 32
 hash_bits = 128
 
+file_csv_rainbow = "rainbow_table.csv"
+file_txt_match = "match_password.txt"
+file_txt_start_words = "words_brute.txt"
+file_txt_hash = "hash_challenges.txt"
+
 def md5(input):
     return hashlib.md5(input.encode()).hexdigest()
 
@@ -48,7 +53,7 @@ def r3(hash):
 
 def generate_chains():
     #words_ccm_2023
-    with open("words_brute.txt", "r") as fr, open("rainbow_table.csv", "w") as fw:
+    with open(file_txt_start_words, "r") as fr, open(file_csv_rainbow, "w") as fw:
         while True:
             line = fr.readline().strip()
             if not line:
@@ -94,7 +99,7 @@ def lookup_generic(hash, reverse_reductions):
         temp = reduction(digest)
         digest = md5(temp)
 
-    with open("rainbow_table.csv", "r") as fr:
+    with open(file_csv_rainbow, "r") as fr:
         while True:
             line = fr.readline().strip()
             if not line:
@@ -112,13 +117,13 @@ def lookup(hash):
     for lookup in lookups:
         result = lookup_generic(hash, lookup)
         if result is not None:
-            with open("match_password.txt", "w") as fw:
+            with open(file_txt_match, "a") as fw:
                 fw.write(hash + " = " + result + "\n")
             return result
     return None
 
 def crack_password():
-    with open("hash_challenges.txt", "r") as fr:
+    with open(file_txt_hash, "r") as fr:
         while True:
             line = fr.readline().strip()
             if not line:
@@ -136,7 +141,7 @@ def generate_start_words(total):
 
 
 def generate_bruteforce():
-    with open("words_brute.txt", "w") as fw:
+    with open(file_txt_start_words, "w") as fw:
         for i in chars:
             for j in chars:
                 for k in chars:
@@ -148,9 +153,12 @@ def generate_bruteforce():
 
 
 if __name__ == '__main__':
+    print("Generate brute force")
     generate_bruteforce()
     #generate_start_words(1_000_000)
     # TODO run before you sleep!
+    print("Generate chains")
     generate_chains()
+    print("Crack password")
     crack_password()
     #print(r3("c5f0d8ce7ba4b986f7480681f52c0f4b"))
