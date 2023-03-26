@@ -1,4 +1,5 @@
 import hashlib
+import os
 import random
 import string
 import time
@@ -153,6 +154,9 @@ def generate_bruteforce():
 
 
 if __name__ == '__main__':
+    # Driver code
+    if os.path.exists(file_txt_match):
+        os.remove(file_txt_match)
     print("Generate brute force")
     generate_bruteforce()
     #generate_start_words(1_000_000)
