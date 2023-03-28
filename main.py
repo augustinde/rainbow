@@ -10,16 +10,18 @@ random.seed(1)
 chars = "abcdefghijklmnopqrstuvwxyz"
 chars_len = len(chars)
 pass_len = 6
-hash_len = 32
-hash_bits = 128
-total_reductions = 3
+salt_len = 4
+total_reductions = 100
 
 file_csv_rainbow = "rainbow_table.csv"
 file_txt_match = "match_password.txt"
-file_txt_start_words = "words_brute.txt"
+file_txt_start_words = "words_ccm_2023.txt" #"words_brute.txt"
 file_txt_hash = "hash_challenges.txt"
 
-
+# Keep track of lines written to rainbow table file
+total_lines = 0
+current_line = 0
+current_rainbow_table = 0
 def md5(input: str) -> str:
     return hashlib.md5(input.encode()).hexdigest()
 
@@ -46,9 +48,12 @@ def r(hash: str, i: int) -> str:
         pass_len        = 6
         search space cardinality = 26**6
     """
-    hash = int(hash, 16)                # convert hash to hex integer
-    temp = (hash + i) % (26 ** 6)       # apply reduction (returns integer)
-    return hex(temp).split('x')[-1]     # convert to hex again and remove leading "0x"
+    temp = (int(hash, 16) + i) % (26 ** 6)       # apply reduction (returns integer)
+    result = []
+    for j in range(pass_len):
+        result += chars[temp % chars_len]
+        temp //= chars_len
+    return deterministic_salting("".join(result), hash)
 
 
 def forward_reductions_word(start_word: str, reductions: int = total_reductions) -> str:
@@ -76,12 +81,14 @@ def forward_reductions_word(start_word: str, reductions: int = total_reductions)
 #################
 
 def generate_chains() -> None:
+    global total_lines
     with open(file_txt_start_words, "r") as fr, open(file_csv_rainbow, "w") as fw:
         while True:
             line = fr.readline().strip()
             if not line:
                 break
             fw.write(generate_chain(line) + "\n")
+            total_lines += 1
             # print(line.strip())
 
 
@@ -124,7 +131,12 @@ def reverse_lookup_generic(hash: str, reverse_reductions: list[int]) -> str:
 
 
 def reverse_lookup(hash) -> str:
-    # lookups = [[r3], [r2, r3], [r1, r2, r3]]
+    """
+
+    """
+    global  current_rainbow_table
+    current_rainbow_table += 1
+
     lookups = []
     for i in range(total_reductions):
         rlist = []
@@ -141,6 +153,7 @@ def reverse_lookup(hash) -> str:
 
 
 def crack_password() -> None:
+    global current_line
     with open(file_txt_hash, "r") as fr:
         while True:
             line = fr.readline().strip()
@@ -148,10 +161,18 @@ def crack_password() -> None:
                 break
             result = reverse_lookup(line)
             if result is not None:
-                print(result)
+                print(f"Found match for : {hash} = {result}")
             else:
-                print("No password in table")
+                pretty_print()
 
+
+def pretty_print() -> None:
+    #total_single_chain_reductions = total_reductions * (1 + total_reductions) // 2
+    #total = total_single_chain_reductions * total_lines
+    #progress = total_lines * current_line + total_single_chain_reductions * current_rainbow_table
+    print(f"Current line : {current_line:02d}", end="\r")
+    #print(f"\rCurrent line : {current_line} | Current rainbow table : {current_rainbow_table} "
+     #     f"| Progress : {progress / total * 100:02f}")
 
 ######################
 # Wordlist functions #
@@ -177,6 +198,7 @@ def generate_bruteforce():
 ###############
 # Driver Code #
 ###############
+
 
 if __name__ == '__main__':
     if os.path.exists(file_txt_match):
