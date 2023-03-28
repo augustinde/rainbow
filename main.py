@@ -107,20 +107,22 @@ def forward_reductions_word(start_word: str, reductions: int = total_reductions)
 
 def generate_chains() -> None:
     global total_lines
+    global current_line
     with open(file_txt_start_words, "r") as fr, open(file_csv_rainbow, "w") as fw:
         while True:
             line = fr.readline().strip()
+            current_line += 1
             if not line:
                 break
             fw.write(generate_chain(line) + "\n")
             total_lines += 1
+            pretty_print()
             # print(line.strip())
 
 
 def generate_chain(start_word: str) -> str:
     start_word = salting(start_word)
     end_word = forward_reductions_word(start_word)
-    pretty_print()
     return f"{start_word},{end_word}"
 
 
