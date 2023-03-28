@@ -120,6 +120,7 @@ def generate_chains() -> None:
 def generate_chain(start_word: str) -> str:
     start_word = salting(start_word)
     end_word = forward_reductions_word(start_word)
+    pretty_print()
     return f"{start_word},{end_word}"
 
 
@@ -235,5 +236,6 @@ if __name__ == '__main__':
     # generate_start_words(1_000_000)
     print("Generate chains")
     generate_chains()
+    current_line = 0
     print("Crack password")
     crack_password()
