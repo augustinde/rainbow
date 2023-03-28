@@ -35,6 +35,31 @@ def elapsed(func: Callable) -> Callable:    # Callable c'est juste le function T
     return wrapper
 
 
+def salting(word: str) -> str:
+    nums = "".join([str(i) for i in range(pass_len)])
+    indices = []
+    for i in range(salt_len):
+        digit = random.choices(nums, k=1)[0]
+        nums = nums.replace(digit, "")
+        indices += digit
+    indices.sort(reverse=True)
+    salt = random.choices("0123456789", k=salt_len)
+    for i, v in enumerate(indices):
+        word = word[:int(v)] + salt[i] + word[int(v):]
+    return word
+
+
+def deterministic_salting(word: str, hash: str) -> str:
+    # Take salt_len * 2 first digits from hash
+    salt_len_first_digits = "".join([c if c.isdigit() else "" for c in hash])[:salt_len*2]
+    salt = salt_len_first_digits[:salt_len]
+    indices = list(map(lambda x: int(x) % pass_len, salt_len_first_digits[salt_len:]))
+    indices.sort(reverse=True)
+    for i, v in enumerate(indices):
+        word = word[:int(v)] + salt[i] + word[int(v):]
+    return word
+
+
 ######################
 # Reduction function #
 ######################
@@ -93,6 +118,7 @@ def generate_chains() -> None:
 
 
 def generate_chain(start_word: str) -> str:
+    start_word = salting(start_word)
     end_word = forward_reductions_word(start_word)
     return f"{start_word},{end_word}"
 
@@ -156,10 +182,11 @@ def crack_password() -> None:
     global current_line
     with open(file_txt_hash, "r") as fr:
         while True:
-            line = fr.readline().strip()
-            if not line:
+            hash = fr.readline().strip()
+            current_line += 1
+            if not hash:
                 break
-            result = reverse_lookup(line)
+            result = reverse_lookup(hash)
             if result is not None:
                 print(f"Found match for : {hash} = {result}")
             else:
@@ -203,12 +230,10 @@ def generate_bruteforce():
 if __name__ == '__main__':
     if os.path.exists(file_txt_match):
         os.remove(file_txt_match)
-    print("Generate brute force")
-    generate_bruteforce()
-    #generate_start_words(1_000_000)
-    # TODO run before you sleep!
-    print("Generate chains")
-    generate_chains()
+    #print("Generate brute force")
+    #generate_bruteforce()
+    # generate_start_words(1_000_000)
+    #print("Generate chains")
+    #generate_chains()
     print("Crack password")
     crack_password()
-    # print(r3("c5f0d8ce7ba4b986f7480681f52c0f4b"))
